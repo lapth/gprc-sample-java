@@ -62,4 +62,48 @@ public class GreetServiceImpl extends GreetServiceGrpc.GreetServiceImplBase {
         // The RPC call will be ended
         responseObserver.onCompleted();
     }
+
+    @Override
+    public StreamObserver<GreetCSRequest> greetCS(StreamObserver<GreetCSResponse> responseObserver) {
+
+        // With client stream model, we have to build a stream observer and return it back to client
+        StreamObserver<GreetCSRequest> greetCSRequestStreamObserver = new StreamObserver<GreetCSRequest>() {
+            // Global result
+            private String result = "";
+
+            // Client just sent a message
+            @Override
+            public void onNext(GreetCSRequest value) {
+                // Retrieve input from request
+                // Let see the proto file to know what input we have
+                Greeting greeting = value.getGreeting();
+                String firstName = greeting.getFirstName();
+                String lastName = greeting.getLastName();
+
+                result += "Hello " + firstName + " " + lastName + ". ";
+            }
+
+            // Client just sent an error
+            @Override
+            public void onError(Throwable t) {
+                // Ignore for now
+            }
+
+            // Client just sent complete signal
+            // Client sends this signal once it want to receive the response from server and finish the request
+            @Override
+            public void onCompleted() {
+                GreetCSResponse greetRes = GreetCSResponse.newBuilder()
+                        .setResult(result)
+                        .build();
+                // Send back the response
+                responseObserver.onNext(greetRes);
+                // Send complete signal
+                responseObserver.onCompleted();
+            }
+        };
+
+        // Return the stream observer and delegate the control back to Client
+        return greetCSRequestStreamObserver;
+    }
 }

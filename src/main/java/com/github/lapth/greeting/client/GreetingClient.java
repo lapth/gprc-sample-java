@@ -3,6 +3,11 @@ package com.github.lapth.greeting.client;
 import com.proto.greet.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.stub.StreamObserver;
+
+import javax.sound.midi.SysexMessage;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class GreetingClient {
 
@@ -12,7 +17,103 @@ public class GreetingClient {
         System.out.println("Creating channel");
 
         // doUnaryCall();
-        doServerStreamingCall();
+        // doServerStreamingCall();
+        doClientStreamingCall();
+    }
+
+    private static void doClientStreamingCall() {
+        // Creat a channel to connect to server
+        ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 30000)
+                .usePlaintext()
+                .build();
+
+        // Create a asynchronous greet client
+        // Note: it is different with Unary and SSRPC, here it is asynchronous
+        GreetServiceGrpc.GreetServiceStub greetClient = GreetServiceGrpc.newStub(channel);
+
+        // We need a way to wait for server complete its job and send back the complete signal
+        // Here we use CountDownLatch, depended on you
+        CountDownLatch latch = new CountDownLatch(1);
+
+        // Call the service with a StreamObserver response
+        // The StreamObserver response is delegated to server and controlled by server
+        // Client needs to listen the signal from server to do needed actions
+        StreamObserver<GreetCSRequest> greetCSRequestStreamObserver = greetClient.greetCS(new StreamObserver<GreetCSResponse>() {
+
+            // Server just sent a message
+            @Override
+            public void onNext(GreetCSResponse value) {
+                System.out.println(value);
+            }
+
+            // Server just sent an error
+            @Override
+            public void onError(Throwable t) {}
+
+            // Server just sent a complete signal
+            @Override
+            public void onCompleted() {
+                System.out.println("Server just sent complete signal.");
+
+                // Countdown to shutdown client once received completed signal from server
+                latch.countDown();
+            }
+        });
+
+        // OK, now Client will send the messages to server
+        System.out.println("Sending Lap Tran");
+        greetCSRequestStreamObserver.onNext(
+                GreetCSRequest.newBuilder().setGreeting(
+                    Greeting.newBuilder()
+                        .setFirstName("Lap")
+                        .setLastName("Tran")
+                        .build()
+                ).build());
+        try {
+            Thread.sleep(1000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Another message
+        System.out.println("Sending Bill Gate");
+        greetCSRequestStreamObserver.onNext(
+                GreetCSRequest.newBuilder().setGreeting(
+                        Greeting.newBuilder()
+                                .setFirstName("Bill")
+                                .setLastName("Gate")
+                                .build()
+                ).build());
+        try {
+            Thread.sleep(1000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Another message
+        System.out.println("Sending Binh Truong");
+        greetCSRequestStreamObserver.onNext(
+                GreetCSRequest.newBuilder().setGreeting(
+                        Greeting.newBuilder()
+                                .setFirstName("Binh")
+                                .setLastName("Truong")
+                                .build()
+                ).build());
+        try {
+            Thread.sleep(1000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Send complete message and wait for response from server
+        greetCSRequestStreamObserver.onCompleted();
+
+        // Block thread and wait until server finished or kill thread after 5m
+        try {
+            latch.await(5L, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private static void doServerStreamingCall() {
