@@ -34,6 +34,14 @@ message GreetCSResponse {
     string result = 1;
 }
 
+message GreetBDRequest {
+    Greeting greeting = 1;
+}
+
+message GreetBDResponse {
+    string result = 1;
+}
+
 service GreetService {
     // Unary RPC
     rpc Greet(GreetRequest) returns (GreetResponse) {};
@@ -43,4 +51,7 @@ service GreetService {
 
     // Client Streaming RPC
     rpc GreetCS(stream GreetCSRequest) returns (GreetCSResponse) {};
+
+    // Bidirectional Streaming RPC
+    rpc GreetBD(stream GreetBDRequest) returns (stream GreetBDResponse) {};
 }
