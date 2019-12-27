@@ -106,4 +106,49 @@ public class GreetServiceImpl extends GreetServiceGrpc.GreetServiceImplBase {
         // Return the stream observer and delegate the control back to Client
         return greetCSRequestStreamObserver;
     }
+
+    @Override
+    public StreamObserver<GreetBDRequest> greetBD(StreamObserver<GreetBDResponse> responseObserver) {
+
+        // The Bidirectional streaming RPC should be similar with Client Streaming RPC
+        // The difference is the response will be send back many times
+
+        // With client stream model, we have to build a stream observer and return it back to client
+        StreamObserver<GreetBDRequest> greetBDRequestStreamObserver = new StreamObserver<GreetBDRequest>() {
+            // Client just sent a message
+            @Override
+            public void onNext(GreetBDRequest value) {
+                // Retrieve input from request
+                // Let see the proto file to know what input we have
+                Greeting greeting = value.getGreeting();
+                String firstName = greeting.getFirstName();
+                String lastName = greeting.getLastName();
+
+                // Build the result
+                String result = "Hello " + firstName + " " + lastName + ".";
+                GreetBDResponse greetRes = GreetBDResponse.newBuilder()
+                        .setResult(result)
+                        .build();
+
+                // Send back the response
+                responseObserver.onNext(greetRes);
+            }
+
+            // Client just sent an error
+            @Override
+            public void onError(Throwable t) {
+                // Ignore for now
+            }
+
+            // Client just sent complete signal
+            @Override
+            public void onCompleted() {
+                // OK I will close the connection too
+                responseObserver.onCompleted();
+            }
+        };
+
+        // Return the stream observer and delegate the control back to Client
+        return greetBDRequestStreamObserver;
+    }
 }

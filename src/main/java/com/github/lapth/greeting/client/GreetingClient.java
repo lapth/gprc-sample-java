@@ -18,7 +18,103 @@ public class GreetingClient {
 
         // doUnaryCall();
         // doServerStreamingCall();
-        doClientStreamingCall();
+        // doClientStreamingCall();
+        doBDStreamingCall();
+    }
+
+    private static void doBDStreamingCall() {
+        // Creat a channel to connect to server
+        ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 30000)
+                .usePlaintext()
+                .build();
+
+        // Create a asynchronous greet client
+        // Note: it is different with Unary and SSRPC, here it is asynchronous
+        GreetServiceGrpc.GreetServiceStub greetClient = GreetServiceGrpc.newStub(channel);
+
+        // We need a way to wait for server complete its job and send back the complete signal
+        // Here we use CountDownLatch, depended on you
+        CountDownLatch latch = new CountDownLatch(1);
+
+        // Call the service with a StreamObserver response
+        // The StreamObserver response is delegated to server and controlled by server
+        // Client needs to listen the signal from server to do needed actions
+        StreamObserver<GreetBDRequest> greetBDRequestStreamObserver = greetClient.greetBD(new StreamObserver<GreetBDResponse>() {
+
+            // Server just sent a message
+            @Override
+            public void onNext(GreetBDResponse value) {
+                System.out.println(value);
+            }
+
+            // Server just sent an error
+            @Override
+            public void onError(Throwable t) {}
+
+            // Server just sent a complete signal
+            @Override
+            public void onCompleted() {
+                System.out.println("Server just sent complete signal.");
+
+                // Countdown to shutdown client once received completed signal from server
+                latch.countDown();
+            }
+        });
+
+        // OK, now Client will send the messages to server
+        System.out.println("Sending Lap Tran");
+        greetBDRequestStreamObserver.onNext(
+                GreetBDRequest.newBuilder().setGreeting(
+                        Greeting.newBuilder()
+                                .setFirstName("Lap")
+                                .setLastName("Tran")
+                                .build()
+                ).build());
+        try {
+            Thread.sleep(1000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Another message
+        System.out.println("Sending Bill Gate");
+        greetBDRequestStreamObserver.onNext(
+                GreetBDRequest.newBuilder().setGreeting(
+                        Greeting.newBuilder()
+                                .setFirstName("Bill")
+                                .setLastName("Gate")
+                                .build()
+                ).build());
+        try {
+            Thread.sleep(1000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Another message
+        System.out.println("Sending Binh Truong");
+        greetBDRequestStreamObserver.onNext(
+                GreetBDRequest.newBuilder().setGreeting(
+                        Greeting.newBuilder()
+                                .setFirstName("Binh")
+                                .setLastName("Truong")
+                                .build()
+                ).build());
+        try {
+            Thread.sleep(1000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Send complete message and wait for response from server
+        greetBDRequestStreamObserver.onCompleted();
+
+        // Block thread and wait until server finished or kill thread after 5m
+        try {
+            latch.await(5L, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private static void doClientStreamingCall() {
