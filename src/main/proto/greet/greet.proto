@@ -26,10 +26,21 @@ message GreetSSResponse {
     string result = 1;
 }
 
+message GreetCSRequest {
+    Greeting greeting = 1;
+}
+
+message GreetCSResponse {
+    string result = 1;
+}
+
 service GreetService {
     // Unary RPC
     rpc Greet(GreetRequest) returns (GreetResponse) {};
 
     // Server Streaming RPC
     rpc GreetSS(GreetSSRequest) returns (stream GreetSSResponse) {};
+
+    // Client Streaming RPC
+    rpc GreetCS(stream GreetCSRequest) returns (GreetCSResponse) {};
 }
