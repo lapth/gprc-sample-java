@@ -4,6 +4,7 @@ import com.proto.dummy.DummyServiceGrpc;
 import com.proto.greet.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
 
 public class GreetingClient {
 
@@ -28,11 +29,12 @@ public class GreetingClient {
                 .setGreeting(greeting)
                 .build();
 
-        // Call the server by gRPC
-        GreetResponse greetResponse = greetClient.greet(greetRequest);
-
-        // Retrieve result and print it
-        System.out.println(greetResponse.getResult());
+        // Call and catch the error
+        try {
+            GreetResponse greetResponse = greetClient.unAuthGreet(greetRequest);
+        } catch (StatusRuntimeException e) {
+            e.printStackTrace();
+        }
 
         System.out.println("Shutdown channel");
         channel.shutdown();

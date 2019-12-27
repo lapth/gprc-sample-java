@@ -21,4 +21,7 @@ message GreetResponse {
 service GreetService {
     // Unary RPC
     rpc Greet(GreetRequest) returns (GreetResponse) {};
+
+    // The server will throw an Error instead
+    rpc UnAuthGreet(GreetRequest) returns (GreetResponse) {};
 }

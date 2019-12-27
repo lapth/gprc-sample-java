@@ -4,6 +4,7 @@ import com.proto.greet.GreetRequest;
 import com.proto.greet.GreetResponse;
 import com.proto.greet.GreetServiceGrpc;
 import com.proto.greet.Greeting;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 public class GreetServiceImpl extends GreetServiceGrpc.GreetServiceImplBase {
@@ -29,5 +30,22 @@ public class GreetServiceImpl extends GreetServiceGrpc.GreetServiceImplBase {
         // Say that this stream was completed.
         // The RPC call will be ended
         responseObserver.onCompleted();
+    }
+
+    @Override
+    public void unAuthGreet(GreetRequest request, StreamObserver<GreetResponse> responseObserver) {
+        Greeting greeting = request.getGreeting();
+        String firstName = greeting.getFirstName();
+        String lastName = greeting.getLastName();
+
+        // For basic understanding, read here https://grpc.io/docs/guides/error/
+        // For more detail, read here https://github.com/grpc/grpc-java/tree/master/examples/src/main/java/io/grpc/examples/errorhandling
+
+        // Return a build-in gRPC error
+        responseObserver.onError(
+                Status.UNAUTHENTICATED
+                        .withDescription("I do know this guy: " + firstName + " " + lastName)
+                        .asRuntimeException()
+        );
     }
 }
