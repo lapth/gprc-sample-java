@@ -3,6 +3,7 @@ package com.github.lapth.greeting.server;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
+import java.io.File;
 import java.io.IOException;
 
 public class GreetingServer {
@@ -10,8 +11,13 @@ public class GreetingServer {
     public static void main(String[] args) throws IOException, InterruptedException {
         System.out.println("Hello gRPC Server");
 
-        // Start server at port 50051
+        // Start server at port 30000
         Server server = ServerBuilder.forPort(30000)
+                // Configure the server with a secure connection
+                .useTransportSecurity(
+                        new File("ssl/server.crt"),
+                        new File("ssl/server.pem")
+                )
                 // Add Greeting service to this gRPC server
                 .addService(new GreetServiceImpl())
                 .build();
